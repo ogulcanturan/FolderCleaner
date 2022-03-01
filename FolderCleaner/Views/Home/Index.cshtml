@@ -1,0 +1,159 @@
+﻿@model IEnumerable<FolderCleaner.Models.CleanerModel>
+@{
+    ViewData["Title"] = $"{nameof(FolderCleaner)} - Home";
+    ViewData["Index"] = "active";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success text-center font-weight-bold">@TempData["SuccessMessage"]</div>
+    <br />
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger text-center font-weight-bold">@TempData["ErrorMessage"]</div>
+    <br />
+}
+<div class="row">
+    <div class="col-6 font-weight-bold">Path</div>
+    <div class="col-4 font-weight-bold">Works At</div>
+    <div class="col-1 font-weight-bold text-center">Active</div>
+</div>
+<form asp-action="AddCleaner" method="post">
+    <div class="row">
+        <div class="col-6">
+            <input name="path" class="form-control" />
+        </div>
+        <div class="col-4">
+            <input name="worksAt" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="form-control" />
+        </div>
+        <div class="col-1">
+            <input name="isActive" type="checkbox" value="true" class="form-control" />
+        </div>
+        <div class="col-1">
+            <button type="submit" class="btn-sm btn-primary"><i class="fas fa-plus" style="font-size:20px;"></i></button>
+        </div>
+    </div>
+    @*<div class="row">
+        <div class="col-6 font-weight-bold">Repeat</div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <input name="parameters" class="form-control"/>
+        </div>
+    </div>*@
+    @*<div class="row mt-1">
+        <div class="col">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus-square" style="font-size:20px;"></i></button>
+        </div>
+    </div>*@
+</form>
+<br/><br/>
+@if (!(Model?.Any() ?? false))
+{
+    <div class="row">
+        <div class="col text-center p-2">No entry</div>
+    </div>
+}
+else
+{
+    <table class="table-responsive table-sm text-center table-striped table-bordered" style="display:inline-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Path</th>
+                <th>TotalFiles</th>
+                <th>IsActive</th>
+                <th>WorksAt</th>
+                <th>Action</th>
+                <th>Manual Clean-up</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Path</td>
+                    <td>@item.TotalFiles</td>
+                    <td>
+                        <input type="checkbox" name="isActive" value="true" @(item.IsActive ? "checked=\"checked\"" : "") onclick="return false;"/>
+                        <div class="btn-sm btn-group">
+                            <form asp-action="SwitchCleaner" method="post">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn-sm btn-primary"><i class="fas fa-recycle" style="font-size:20px;"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                    <td>@item.WorksAt.ToString("HH:mm")</td>
+                    <td>
+                        <div class="btn-sm btn-group">
+                            <button type="submit" class="btn-sm btn-danger" onclick="ChangeValue('@item.Path', '@item.Id')"><i class="fas fa-trash" style="font-size:20px;"></i></button>
+                        </div> 
+                    </td>
+                    <td>
+                        <div class="btn-sm btn-group">
+                            <form asp-action="ManualCleanUp" method="post">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn-sm btn-success"><i class="fas fa-broom" style="font-size:20px;"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="modal fade" id="myModal2" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"></h5>
+                    <a type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></a>
+                </div>
+                <form name="deleteModal" method="post">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label name="confirmMessage">Are you sure you want to continue?</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Path: </label>
+                            <input name="deleteContent" disabled class="form-control" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div>
+                            <button type="submit" class="btn btn-danger">I'm Sure</button>
+                            <button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="popover_title" style="display: none">
+</div>
+<div id="popover_content_wrapper" style="display: none">
+    <span id="cart_details"></span>
+        <a class="delete_proc" style="font-size:20px;">
+            <i class="fa fa-minus-circle text-danger"></i>
+        </a>
+</div>
+<style>
+    .fa-minus-circle {
+        font-size: 20px;
+    }
+</style>
+@section Scripts{
+    <script>
+        function ChangeValue(appName, id) {
+            document.getElementsByClassName("modal-title")[0].innerHTML = "<button class='btn btn-sm btn-dark' style='background:none !important;border:none;font-size:inherit;color:#000;'><i class='btn btn-sm btn-dark fas fa-ban'></i> | Remove Confirmation</button>";
+            document.getElementsByName("deleteModal")[0].setAttribute("action", "/Home/DeleteCleaner/" + id);
+            document.getElementsByName("deleteContent")[0].setAttribute("value", appName);
+            document.getElementsByName("confirmMessage")[0].textContent = "Are you sure you want to remove this task?";
+            $('#myModal2').modal('toggle');
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.2/jquery.validate.min.js" integrity="sha512-UdIMMlVx0HEynClOIFSyOrPggomfhBKJE28LKl8yR3ghkgugPnG6iLfRfHwushZl1MOPSY6TsuBDGPK2X4zYKg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js" integrity="sha512-EanukVTZc4W9tUCLnDl069Izidg49PcNRKO1upLzKt9ajq66i+bXOtlzXcIbRhb6vVEGF6BCc8wQi5T1ztCpTQ==" crossorigin="anonymous"></script>
+}

@@ -1,0 +1,51 @@
+﻿@model List<IEnumerable<CleanerHistoryModel>>
+@{
+    ViewData["Title"] = $"{nameof(FolderCleaner)} - History";
+    ViewData["History"] = "active";
+    int i = 0;
+}
+@foreach (var item in Model)
+{
+    if (i == 0)
+    {
+        <h4>Active Records</h4>
+    }
+    else
+    {
+        <h4>All History</h4>
+    }
+    @if (!(item?.Any() ?? false))
+    {
+        <div class="row">
+            <div class="col text-center p-2">No entry</div>
+        </div>
+    }
+    else
+    {
+        <table class="table-responsive table-sm table-striped table-bordered mb-3" style="display:inline-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>WorksAt</th>
+                    <th>CreatedOn</th>
+                    <th>Status</th>
+                    <th>ModelId</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var history in item)
+                {
+                    <tr>
+                        <td>@history.Id</td>
+                        <td>@history.CleanerModel.WorksAt.ToString("HH:mm")</td>
+                        <td>@history.CreatedOn</td>
+                        <td>@history.CleanerStatusDescription</td>
+                        <td>@history.CleanerId</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    i++;
+}
+
