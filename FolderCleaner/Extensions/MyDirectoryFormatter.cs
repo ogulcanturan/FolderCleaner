@@ -96,7 +96,7 @@ namespace FolderCleaner.Worker.Extensions
 	                </div>
                     <footer class='border-top text-center footer text-muted' style='margin-bottom:20px;'>
                         <div class='container mt-3'>
-                            &copy; 2022 <img src='/favicon.ico' width='12px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);' /> - Designed by Oğulcan TURAN
+                            &copy; 2022 <img src='/favicon.ico' width='12px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);'/>
                         </div>
                     </footer>
                     <script src='https://code.jquery.com/jquery-3.4.1.slim.min.js' integrity='sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n' crossorigin='anonymous'></script>
