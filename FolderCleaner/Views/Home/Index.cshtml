@@ -1,4 +1,4 @@
-﻿@model IEnumerable<FolderCleaner.Models.CleanerModel>
+﻿@model IndexPageViewModel
 @{
     ViewData["Title"] = $"{nameof(FolderCleaner)} - Home";
     ViewData["Index"] = "active";
@@ -14,41 +14,38 @@
     <br />
 }
 <div class="row">
-    <div class="col-6 font-weight-bold">Path</div>
-    <div class="col-4 font-weight-bold">Works At</div>
+    <div class="col-4 font-weight-bold">Path</div>
+    <div class="col-3 font-weight-bold">Runs At</div>
     <div class="col-1 font-weight-bold text-center">Active</div>
+    <div class="col-1 font-weight-bold text-center">Repeat</div>
+    <div class="col-2 font-weight-bold repeatInput show">Repeat Range</div>
 </div>
-<form asp-action="AddCleaner" method="post">
+<form asp-action="AddCleaningRecord" method="post">
     <div class="row">
-        <div class="col-6">
-            <input name="path" class="form-control" />
-        </div>
         <div class="col-4">
-            <input name="worksAt" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="form-control" />
+            <input asp-for="CleaningRecord.Path" class="form-control" />
+        </div>
+        <div class="col-3">
+            <input asp-for="CleaningRecord.RunsAt" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="form-control" />
         </div>
         <div class="col-1">
-            <input name="isActive" type="checkbox" value="true" class="form-control" />
+            <input asp-for="CleaningRecord.IsActive" type="checkbox" class="form-control" />
+        </div>
+        <div class="col-1">
+            <input asp-for="CleaningRecord.Repeat" type="checkbox"  data-toggle="collapse" data-target=".repeatInput" aria-expanded="true" aria-controls=".repeatInput" class="form-control" />
+        </div>
+        <div class="col-2 repeatInput show" >
+            <input asp-for="CleaningRecord.RepeatRange" type="number" value="1" class="form-control" style="border-radius:unset" />
+            <select asp-for="CleaningRecord.Time" asp-items="Html.GetEnumSelectList<Time>()" class="form-control" style="padding:unset;border-radius:unset">
+            </select>
         </div>
         <div class="col-1">
             <button type="submit" class="btn-sm btn-primary"><i class="fas fa-plus" style="font-size:20px;"></i></button>
         </div>
     </div>
-    @*<div class="row">
-        <div class="col-6 font-weight-bold">Repeat</div>
-    </div>
-    <div class="row">
-        <div class="col-6">
-            <input name="parameters" class="form-control"/>
-        </div>
-    </div>*@
-    @*<div class="row mt-1">
-        <div class="col">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-plus-square" style="font-size:20px;"></i></button>
-        </div>
-    </div>*@
 </form>
 <br/><br/>
-@if (!(Model?.Any() ?? false))
+@if (!(Model.CollectionOfCleaningRecords?.Any() ?? false))
 {
     <div class="row">
         <div class="col text-center p-2">No entry</div>
@@ -56,49 +53,55 @@
 }
 else
 {
-    <table class="table-responsive table-sm text-center table-striped table-bordered" style="display:inline-table">
-        <thead>
+    <table class="table table-responsive table-sm text-center table-striped table-bordered" style="display:inline-table">
+        <thead class="thead-dark">
             <tr>
                 <th>#</th>
-                <th>Path</th>
-                <th>TotalFiles</th>
-                <th>IsActive</th>
-                <th>WorksAt</th>
-                <th>Action</th>
-                <th>Manual Clean-up</th>
+                <th>@nameof(CleaningRecord.Path)</th>
+                <th>@nameof(CleaningRecord.RunsAt)</th>
+                <th>@nameof(CleaningRecord.TotalFiles)</th>
+                <th>@nameof(CleaningRecord.CleaningSize)  (bytes)</th>
+                <th>@nameof(CleaningRecord.IsActive)</th>
+                <th>@nameof(CleaningRecord.Repeat)</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @foreach (var item in Model.CollectionOfCleaningRecords)
             {
-                <tr>
-                    <td>@item.Id</td>
-                    <td>@item.Path</td>
-                    <td>@item.TotalFiles</td>
-                    <td>
-                        <input type="checkbox" name="isActive" value="true" @(item.IsActive ? "checked=\"checked\"" : "") onclick="return false;"/>
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Path</td>
+                <td>@item.RunsAt</td>
+                <td>@item.TotalFiles</td>
+                <td>@item.CleaningSize</td>
+                <td>
+                    @if(item.Repeat || item.RunsAt >= DateTime.Now)
+                    {
+                        <input type="checkbox" name="isActive" value="true" @(item.IsActive ? "checked=\"checked\"" : "") onclick="return false;" />
                         <div class="btn-sm btn-group">
-                            <form asp-action="SwitchCleaner" method="post">
+                            <form asp-action="SwitchCleaningRecordActivity" method="post">
                                 <input type="hidden" name="id" value="@item.Id" />
                                 <button type="submit" class="btn-sm btn-primary"><i class="fas fa-recycle" style="font-size:20px;"></i></button>
                             </form>
                         </div>
-                    </td>
-                    <td>@item.WorksAt.ToString("HH:mm")</td>
-                    <td>
-                        <div class="btn-sm btn-group">
-                            <button type="submit" class="btn-sm btn-danger" onclick="ChangeValue('@item.Path', '@item.Id')"><i class="fas fa-trash" style="font-size:20px;"></i></button>
-                        </div> 
-                    </td>
-                    <td>
-                        <div class="btn-sm btn-group">
-                            <form asp-action="ManualCleanUp" method="post">
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn-sm btn-success"><i class="fas fa-broom" style="font-size:20px;"></i></button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
+                    }
+                    
+                </td>
+                <td>
+                    <input type="checkbox" value="true" @(item.Repeat ? "checked=\"checked\"" : "") onclick="return false;" />
+                    @(item.Repeat ? $"{item.RepeatRange} seconds" : "")
+                </td>
+                <td>
+                    <div class="btn-sm btn-group">
+                        <button type="submit" class="btn-sm btn-danger mr-1" onclick="ChangeValue('@item.Path', '@item.Id')"><i class="fas fa-trash" style="font-size:20px;"></i></button>
+                        <form asp-action="ManualCleanUp" method="post">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit" class="btn-sm btn-success"><i class="fas fa-broom" style="font-size:20px;"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
             }
         </tbody>
     </table>
@@ -148,7 +151,7 @@ else
     <script>
         function ChangeValue(appName, id) {
             document.getElementsByClassName("modal-title")[0].innerHTML = "<button class='btn btn-sm btn-dark' style='background:none !important;border:none;font-size:inherit;color:#000;'><i class='btn btn-sm btn-dark fas fa-ban'></i> | Remove Confirmation</button>";
-            document.getElementsByName("deleteModal")[0].setAttribute("action", "/Home/DeleteCleaner/" + id);
+            document.getElementsByName("deleteModal")[0].setAttribute("action", "/Home/DeleteCleaningRecord/" + id);
             document.getElementsByName("deleteContent")[0].setAttribute("value", appName);
             document.getElementsByName("confirmMessage")[0].textContent = "Are you sure you want to remove this task?";
             $('#myModal2').modal('toggle');

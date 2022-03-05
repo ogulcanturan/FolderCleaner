@@ -1,4 +1,4 @@
-﻿@model List<IEnumerable<CleanerHistoryModel>>
+﻿@model List<IEnumerable<CleaningHistory>>
 @{
     ViewData["Title"] = $"{nameof(FolderCleaner)} - History";
     ViewData["History"] = "active";
@@ -12,7 +12,7 @@
     }
     else
     {
-        <h4>All History</h4>
+        <h4>All History <small style="font-weight:bold">(active records have excluded)</small></h4>
     }
     @if (!(item?.Any() ?? false))
     {
@@ -22,14 +22,26 @@
     }
     else
     {
-        <table class="table-responsive table-sm table-striped table-bordered mb-3" style="display:inline-table">
-            <thead>
+        <table class="table table-responsive table-sm table-striped table-bordered mb-3" style="display:inline-table">
+            <thead class="thead-dark">
                 <tr>
                     <th>#</th>
-                    <th>WorksAt</th>
-                    <th>CreatedOn</th>
+                    <th>@nameof(CleaningHistory.RunsAt)</th>
+                    <th>@nameof(CleaningHistory.TotalFiles)</th>
+                    <th>@nameof(CleaningHistory.CleaningSize) (bytes)</th>
+                    <th>@nameof(CleaningHistory.CreatedOn)</th>
+                    <th>@nameof(CleaningHistory.UpdatedOn)</th>
+                    <th>@nameof(CleaningHistory.TriggeredBy)</th>
                     <th>Status</th>
-                    <th>ModelId</th>
+                    <th>RecordId</th>
+                    @if (i != 0)
+                    {
+                        <th class="text-center">
+                            <form asp-action="ClearTheHistory" method="post">
+                                <button type="submit" class="btn-sm btn-success"><i class="fas fa-broom" style="font-size:20px;"></i></button>
+                            </form>
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -37,10 +49,18 @@
                 {
                     <tr>
                         <td>@history.Id</td>
-                        <td>@history.CleanerModel.WorksAt.ToString("HH:mm")</td>
+                        <td>@history.RunsAt</td>
+                        <td>@(i != 0 ? history.TotalFiles : history.CleaningRecord.TotalFiles)</td>
+                        <td>@(i != 0 ? history.CleaningSize : history.CleaningRecord.CleaningSize)</td>
                         <td>@history.CreatedOn</td>
-                        <td>@history.CleanerStatusDescription</td>
-                        <td>@history.CleanerId</td>
+                        <td>@history.UpdatedOn</td>
+                        <td>@history.TriggeredBy.ToString()</td>
+                        <td>@history.CleaningStatusDescription</td>
+                        <td>@history.CleaningRecordId</td>
+                        @if(i != 0)
+                        {
+                            <td></td>
+                        }
                     </tr>
                 }
             </tbody>
@@ -48,4 +68,3 @@
     }
     i++;
 }
-

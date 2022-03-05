@@ -1,13 +1,13 @@
-﻿using FolderCleaner.Models;
+﻿using FolderCleaner.Worker.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace FolderCleaner.DataContext
+namespace FolderCleaner.Worker.DataContext
 {
     public class Context : DbContext
     {
         public Context(DbContextOptions<Context> opts) : base(opts) { }
 
-        public DbSet<CleanerModel> Cleaners { get; set; }
-        public DbSet<CleanerHistoryModel> CleanerHistories { get; set; }
+        public DbSet<CleaningRecord> CleaningRecords { get; set; }
+        public DbSet<CleaningHistory> CleaningHistory { get; set; }
     }
 }

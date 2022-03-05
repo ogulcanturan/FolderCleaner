@@ -1,25 +1,19 @@
-﻿using FolderCleaner.BackgroundService;
-using FolderCleaner.DataContext;
-using FolderCleaner.Extensions;
-using FolderCleaner.Services;
-using FolderCleaner.Services.Interfaces;
+﻿using FolderCleaner.Worker.BackgroundServices;
+using FolderCleaner.Worker.DataContext;
+using FolderCleaner.Worker.Extensions;
+using FolderCleaner.Worker.Services;
+using FolderCleaner.Worker.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
-namespace FolderCleaner
+namespace FolderCleaner.Worker.Worker
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-        public IConfiguration Configuration { get; }
         public void ConfigureServices(IServiceCollection services)
         {
             SetDatabase(services);
@@ -52,10 +46,10 @@ namespace FolderCleaner
         }
         public void SetServices(IServiceCollection services)
         {
-            services.AddScoped<ICleanerHistoryService, CleanerHistoryService>();
-            services.AddScoped<ICleanerService, CleanerService>();
+            services.AddScoped<ICleaningHistoryService, CleaningHistoryService>();
+            services.AddScoped<ICleaningRecordService, CleaningRecordService>();
             services.AddSingleton<IFileService, FileService>();
-            services.AddHostedService<CleanerHostedService>();
+            services.AddHostedService<CleaningHostedService>();
         }
     }
 }

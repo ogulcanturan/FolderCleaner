@@ -9,7 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FolderCleaner.Extensions
+namespace FolderCleaner.Worker.Extensions
 {
     public class MyDirectoryFormatter : IDirectoryFormatter
     {
@@ -55,8 +55,8 @@ namespace FolderCleaner.Extensions
                 </head>
                 <body style='background:#f8f9fa;'>
                 <header>
-                    <nav class='navbar navbar-expand-lg navbar-dark bg-dark'>
-                        <a class='navbar-brand' href='/'>FolderCleaner <img src='/favicon.ico' width='32px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);'/></a>
+                    <nav class='navbar navbar-expand-md navbar-dark bg-dark'>
+                        <a class='navbar-brand' style='padding-left:5px' href='/'>FolderCleaner <img src='/favicon.ico' width='32px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);'/></a>
                         <div class='collapse container navbar-collapse' id='navbarText'>
                             <ul class='navbar-nav mr-auto'>
                                 <li class='nav-item'>
@@ -70,11 +70,12 @@ namespace FolderCleaner.Extensions
                                 </li>
                             </ul>
                         </div>
+                        <span style='padding-right:5px;color:#ffb11b'>Server time: <span id='date' style='color:#fff'>{DateTime.Now.AddSeconds(1).ToString("M/d/yyyy H:m:s")}</span></span>
                     </nav>
                 </header>
-                    <div class='bg-light container' style='margin-top:15px;box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25);'>
-                        <div class='container body-content' style='padding-top:15px;'>
-                            <main role='main' class='pb-3'>
+                    <div style='padding:20px 20px 20px 20px'>
+                        <div class='container body-content' style='padding: 15px 30px 15px 30px; box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .25)'>
+                            <main role='main'>
                                 <h3>{GetHeaderLinks(requestPath)}</h1>
                                 <table class='table table-hover'>
                                     <thead>
@@ -83,6 +84,7 @@ namespace FolderCleaner.Extensions
 				                        <th>Name</th>
 				                        <th>Size</th>
 				                        <th>Last Modified</th>
+                                        <th>
 			                        </tr>
 			                        </thead>
 			                        <tbody>
@@ -92,15 +94,17 @@ namespace FolderCleaner.Extensions
                             </main>
                          </div>
 	                </div>
-                    <footer class='border-top text-center footer text-muted' style='margin-top:20px;margin-bottom:20px;'>
+                    <footer class='border-top text-center footer text-muted' style='margin-bottom:20px;'>
                         <div class='container mt-3'>
-                            &copy; 2022 <img src='/favicon.ico' width='12px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);' />
+                            &copy; 2022 <img src='/favicon.ico' width='12px' style='-webkit-transform: scaleX(-1);transform:scaleX(-1);' /> - Designed by Oğulcan TURAN
                         </div>
                     </footer>
                     <script src='https://code.jquery.com/jquery-3.4.1.slim.min.js' integrity='sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n' crossorigin='anonymous'></script>
                     <script src='https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js' integrity='sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo' crossorigin='anonymous'></script>
                     <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js' integrity='sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6' crossorigin='anonymous'></script>
                     <script src='/js/site.js' type='text/javascript' language='javascript'></script>
+                    <script>var currentTime = new Date('{DateTime.Now.AddSeconds(1).ToString("yyyy-MM-dd HH:mm:ss")}');</script>
+                    <script src='/js/serverDate.js' type='text/javascript' language='javascript'></script>
             </body>
             </html>
             ");
@@ -133,11 +137,12 @@ namespace FolderCleaner.Extensions
             foreach (var subdir in contents.Where(info => info.IsDirectory))
             {
                 builder.AppendFormat($@"
-                    <tr style='cursor:pointer;' onclick='copyToClipboard({string.Format($"\"{HtmlEncode(subdir.Name)}\"")})' data-container='body' data-toggle='popover' data-placement='top'>
+                    <tr>
                         <td><i class='fas fa-archive badge badge-success' style='{GetStyle(subdir.Name)}'></i></td>
                         <td><a href='{HtmlEncode(subdir.Name)}/'>{HtmlEncode(subdir.Name)}/</a></td>
                         <td></td>
                         <td>{HtmlEncode(subdir.LastModified.LocalDateTime.ToString("dd/MM/yyyy HH:mm"))}</td>
+                        <td><button class='btn btn-sm btn-secondary' onclick='copyToClipboard({string.Format($"\"{HtmlEncode(subdir.Name)}\"")})' data-container='body' data-toggle='popover' data-placement='top'>Copy</button></td>
                     </tr>
                     ");
             }
@@ -149,6 +154,7 @@ namespace FolderCleaner.Extensions
                     <td><p>{HtmlEncode(file.Name)}</p></td>
                     <td>{GetLengthString(file.Length)}</td>
                     <td>{HtmlEncode(file.LastModified.LocalDateTime.ToString("dd/MM/yyyy HH:mm"))}</td>
+                    <td><button class='btn btn-sm btn-secondary' onclick='copyToClipboard({string.Format($"\"{HtmlEncode(file.Name)}\"")})' data-container='body' data-toggle='popover' data-placement='top'>Copy</button></td>
                   </tr>
                 ");
             }

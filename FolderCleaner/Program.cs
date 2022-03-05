@@ -1,10 +1,10 @@
-﻿using FolderCleaner.DataContext;
+﻿using FolderCleaner.Worker.DataContext;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FolderCleaner
+namespace FolderCleaner.Worker.Worker
 {
     public class Program
     {

@@ -1,62 +1,73 @@
-﻿using FolderCleaner.Models;
-using FolderCleaner.Services.Interfaces;
+﻿using FolderCleaner.Worker.Enums;
+using FolderCleaner.Worker.Models;
+using FolderCleaner.Worker.Models.ViewModels;
+using FolderCleaner.Worker.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FolderCleaner.Controllers
+namespace FolderCleaner.Worker.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ICleanerService _cleanerService;
-        private readonly ICleanerHistoryService _cleanerHistoryService;
+        private readonly ICleaningRecordService _cleaningRecordService;
+        private readonly ICleaningHistoryService _cleaningHistoryService;
         private readonly IFileService _fileService;
-        public HomeController(ICleanerService cleanerService, ICleanerHistoryService cleanerHistoryService, IFileService fileService)
+        public HomeController(ICleaningRecordService cleaningRecordService, ICleaningHistoryService cleaningHistoryService, IFileService fileService)
         {
-            _cleanerService = cleanerService;
-            _cleanerHistoryService = cleanerHistoryService;
+            _cleaningRecordService = cleaningRecordService;
+            _cleaningHistoryService = cleaningHistoryService;
             _fileService = fileService;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            var list = await _cleanerService.GetAllAsync(cancellationToken);
-            return View(list);
+            var list = await _cleaningRecordService.GetAllAsync(cancellationToken);
+            return View(new IndexPageViewModel
+            {
+                CollectionOfCleaningRecords = list,
+                CleaningRecord = new CleaningRecord
+                {
+                    IsActive = true,
+                    RunsAt = DateTime.Now,
+                    Repeat = true,
+                    Time = Time.Day,
+                }
+            });
         }
 
         public async Task<IActionResult> History(CancellationToken cancellationToken)
         {
-            
-            var allHistory = await _cleanerHistoryService.GetAllAsync(cancellationToken);
-            var statusReadyHistories = await _cleanerHistoryService.GetActiveStatusReadyRecordsAsync(cancellationToken);
-            return View(new List<IEnumerable<CleanerHistoryModel>> { statusReadyHistories, allHistory });
+            var allHistory = await _cleaningHistoryService.GetAllAsync(cancellationToken);
+            var statusReadyHistories = await _cleaningHistoryService.GetActiveStatusReadyRecordsAsync(cancellationToken);
+            return View(new List<IEnumerable<CleaningHistory>> { statusReadyHistories, allHistory });
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddCleaner(CleanerModel cleanerModel, CancellationToken cancellationToken)
+        public async Task<IActionResult> AddCleaningRecord(IndexPageViewModel indexPageViewModel, CancellationToken cancellationToken)
         {
             if (ModelState.IsValid)
             {
-                await _cleanerService.CreateAsync(cleanerModel, cancellationToken);
+                await _cleaningRecordService.CreateAsync(indexPageViewModel.CleaningRecord, TriggeredBy.Worker, cancellationToken);
                 TempData["SuccessMessage"] = "Success!";
             }
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteCleaner(int id, CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteCleaningRecord(int id, CancellationToken cancellationToken)
         {
-            await _cleanerService.DeleteByIdAsync(id, cancellationToken);
+            await _cleaningRecordService.DeleteByIdAsync(id, cancellationToken);
             TempData["SuccessMessage"] = "Success!";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public async Task<IActionResult> SwitchCleaner(int id, CancellationToken cancellationToken)
+        public async Task<IActionResult> SwitchCleaningRecordActivity(int id, CancellationToken cancellationToken)
         {
-            await _cleanerService.SwitchActivityAsync(id, cancellationToken);
+            await _cleaningRecordService.SwitchActivityAsync(id, cancellationToken);
             TempData["SuccessMessage"] = "Success!";
             return RedirectToAction(nameof(Index));
         }
@@ -64,20 +75,39 @@ namespace FolderCleaner.Controllers
         [HttpPost]
         public async Task<IActionResult> ManualCleanUp(int id, CancellationToken cancellationToken)
         {
-            var entity = await _cleanerService.GetByIdAsync(id, cancellationToken);
-            if(entity != null)
+            var cleaningRecord = await _cleaningRecordService.GetByIdAsync(id, cancellationToken);
+            if (cleaningRecord != null)
             {
                 try
                 {
-                    _fileService.Delete(entity.Path);
+                    int? totalFiles = cleaningRecord.TotalFiles;
+                    long? cleaningSize = cleaningRecord.CleaningSize;
+                    _fileService.Delete(cleaningRecord.Path);
+
+                    await _cleaningHistoryService.CreateAsync(new CleaningHistory
+                    {
+                        RunsAt = DateTime.Now,
+                        CleaningSize = cleaningSize,
+                        TotalFiles = totalFiles,
+                        CleaningStatus = CleaningStatus.Success,
+                        CleaningRecordId = id,
+                        TriggeredBy = TriggeredBy.User,
+                    }, cancellationToken);
+
                     TempData["SuccessMessage"] = "Success!";
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     TempData["ErrorMessage"] = ex.Message;
                 }
             }
             return RedirectToAction(nameof(Index));
+        }
+        [HttpPost]
+        public async Task<IActionResult> ClearTheHistory(CancellationToken cancellationToken)
+        {
+            await _cleaningHistoryService.ClearTheHistoryAsync(cancellationToken);
+            return RedirectToAction(nameof(History));
         }
     }
 }
