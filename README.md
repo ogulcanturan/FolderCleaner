@@ -1,4 +1,4 @@
-# FolderCleaner-ASP.NET Core
+# FolderCleaner.Worker-ASP.NET Core
 An asp.net core mvc 3.1 application for designed to deleting files and folders 
 
 ![alt text](https://ogulcanturan.com/uploads/PersonalWebsite.MvcWeb/image/png/9acdc568-c09c-4576-ac0e-ec32c1959b37.png)
