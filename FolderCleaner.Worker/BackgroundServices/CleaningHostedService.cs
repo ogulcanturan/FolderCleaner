@@ -61,7 +61,7 @@ namespace FolderCleaner.Worker.BackgroundServices
 
         public void Dispose()
         {
-            _timer.Dispose();
+            _timer?.Dispose();
         }
     }
 }
