@@ -14,6 +14,8 @@ namespace FolderCleaner.Worker.BackgroundServices
         private readonly ICleaningHistoryService _cleaningHistoryService;
         private Timer _timer;
         private int _cleaningHostedServicePeriod = 60;
+        private static int numberOfActiveJobs = 0;
+        private const int maxNumberOfActiveJobs = 1;
         public CleaningHostedService(IServiceProvider serviceProvider, IConfiguration configuration)
         {
             _cleaningHistoryService = serviceProvider.CreateScope().ServiceProvider.GetRequiredService<ICleaningHistoryService>();
@@ -42,20 +44,28 @@ namespace FolderCleaner.Worker.BackgroundServices
             }
             var startOn = TimeSpan.FromSeconds(5);
             var period = TimeSpan.FromSeconds(_cleaningHostedServicePeriod);
-            _timer = new Timer(Work, null, startOn, period);
+            _timer = new Timer(async x => await WorkAsync(x), null, startOn, period);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _timer?.Change(Timeout.Infinite, 0);
             return Task.CompletedTask;
         }
 
-        public void Work(object state)
+        public async Task WorkAsync(object state)
         {
-            var activeHistoryList = _cleaningHistoryService.GetActivePendingRecordsAsync(default).Result;
-            foreach (var activeHistory in activeHistoryList)
+            if (numberOfActiveJobs < maxNumberOfActiveJobs)
             {
-                _cleaningHistoryService.StartCleaningAsync(activeHistory, TriggeredBy.Worker, default).Wait();
+                try
+                {
+                    Interlocked.Increment(ref numberOfActiveJobs);
+                    await _cleaningHistoryService.StartCleaningAsync(TriggeredBy.Worker, default).ConfigureAwait(false);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref numberOfActiveJobs);
+                }
             }
         }
 

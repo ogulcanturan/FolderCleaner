@@ -94,7 +94,7 @@ else
                 </td>
                 <td>
                     <div class="btn-sm btn-group">
-                        <button type="submit" class="btn-sm btn-danger mr-1" onclick="ChangeValue('@item.Path', '@item.Id')"><i class="fas fa-trash" style="font-size:20px;"></i></button>
+                        <button type="submit" class="btn-sm btn-danger mr-1" onclick="ChangeValue('@item.Path?.Replace('\\','/')', '@item.Id')"><i class="fas fa-trash" style="font-size:20px;"></i></button>
                         <form asp-action="ManualCleanUp" method="post">
                             <input type="hidden" name="id" value="@item.Id" />
                             <button type="submit" class="btn-sm btn-success"><i class="fas fa-broom" style="font-size:20px;"></i></button>

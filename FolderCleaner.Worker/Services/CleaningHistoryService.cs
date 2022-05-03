@@ -88,6 +88,76 @@ namespace FolderCleaner.Worker.Services
             }
         }
 
+        public async Task StartCleaningAsync(TriggeredBy triggeredBy, CancellationToken cancellationToken)
+        {
+            var activeHistoryList = await GetActivePendingRecordsAsync(cancellationToken);
+            foreach (var activeHistory in activeHistoryList)
+            {
+                try
+                {
+                    await UpdateAsync(new CleaningHistory
+                    {
+                        Id = activeHistory.Id,
+                        CleaningStatus = CleaningStatus.Started,
+                        CleaningRecordId = activeHistory.CleaningRecordId,
+                        TriggeredBy = triggeredBy,
+                        CleaningRecord = activeHistory.CleaningRecord
+                    }, cancellationToken);
+                    int? totalFiles = activeHistory.CleaningRecord.TotalFiles;
+                    long? cleaningSize = activeHistory.CleaningRecord.CleaningSize;
+                    _fileService.Delete(activeHistory.CleaningRecord.Path);
+
+                    await UpdateAsync(new CleaningHistory
+                    {
+                        Id = activeHistory.Id,
+                        CleaningStatus = CleaningStatus.Success,
+                        CleaningRecordId = activeHistory.CleaningRecordId,
+                        TriggeredBy = triggeredBy,
+                        CleaningRecord = activeHistory.CleaningRecord,
+                        TotalFiles = totalFiles,
+                        CleaningSize = cleaningSize
+                    }, cancellationToken);
+
+                    if (activeHistory.CleaningRecord.Repeat)
+                    {
+                        var cleaningHistory = new CleaningHistory
+                        {
+                            RunsAt = activeHistory.RunsAt.AddSeconds(activeHistory.CleaningRecord.RepeatRange.Value),
+                            CleaningStatus = CleaningStatus.Ready,
+                            CleaningRecordId = activeHistory.CleaningRecordId,
+                            TriggeredBy = triggeredBy,
+                        };
+                        while (DateTime.Now > cleaningHistory.RunsAt)
+                        {
+                            cleaningHistory.RunsAt = cleaningHistory.RunsAt.AddSeconds(activeHistory.CleaningRecord.RepeatRange.Value);
+                        }
+                        await CreateAsync(cleaningHistory, cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var errorModel = new CleaningHistory
+                    {
+                        Id = activeHistory.Id,
+                        CleaningStatus = CleaningStatus.Failure,
+                        CleaningRecordId = activeHistory.CleaningRecordId,
+                        TriggeredBy = triggeredBy,
+                        CleaningRecord = activeHistory.CleaningRecord
+                    };
+                    errorModel.AppendExtraMessageToStatusDescription(ex.Message);
+                    errorModel = await UpdateAsync(errorModel, cancellationToken);
+
+                    await CreateAsync(new CleaningHistory
+                    {
+                        RunsAt = errorModel.RunsAt,
+                        CleaningStatus = CleaningStatus.Ready,
+                        CleaningRecordId = activeHistory.CleaningRecordId,
+                        TriggeredBy = triggeredBy,
+                    }, cancellationToken);
+                }
+            }
+        }
+
         public async Task<CleaningHistory> CreateAsync(CleaningHistory cleanerHistoryModel, CancellationToken cancellationToken)
         {
             var cleaningHistoryEntry = await _context.CleaningHistory.AddAsync(cleanerHistoryModel, cancellationToken);

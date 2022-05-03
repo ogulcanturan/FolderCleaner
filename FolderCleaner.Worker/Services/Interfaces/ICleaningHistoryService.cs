@@ -9,6 +9,7 @@ namespace FolderCleaner.Worker.Services.Interfaces
     public interface ICleaningHistoryService
     {
         Task StartCleaningAsync(CleaningHistory activeHistory, TriggeredBy triggeredBy, CancellationToken cancellationToken);
+        Task StartCleaningAsync(TriggeredBy triggeredBy, CancellationToken cancellationToken);
         Task<IEnumerable<CleaningHistory>> GetAllAsync(CancellationToken cancellationToken);
         Task<IEnumerable<CleaningHistory>> GetActiveTriggeredByWorkerAllAsync(CancellationToken cancellationToken);
         Task<IEnumerable<CleaningHistory>> GetActiveStatusReadyRecordsAsync(CancellationToken cancellationToken);
